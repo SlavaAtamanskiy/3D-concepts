@@ -1,7 +1,14 @@
-var renderer, scene, camera, world, start, jumping;
-var leftLane=-1;
-var rightLane=1;
-var middleLane=0;
+// scene variables
+var renderer, scene, camera;
+// meshes
+var world, hero;
+// mesh functionality
+var worldSpeed = Math.PI/800;
+var heroSpeed  = Math.PI/50;
+var jumping;
+var leftLane = -1;
+var rightLane = 1;
+var middleLane = 0;
 var currentLane;
 
 function startGame () {
@@ -36,8 +43,9 @@ function startGame () {
 }
 
 function loop () {
-
-    world.rotation.x += Math.PI/800;
+  
+    world.rotation.x += worldSpeed;
+    hero.rotation.x  -= heroSpeed;
     renderer.render(scene, camera);
     requestAnimationFrame(function (){
         loop ();
@@ -49,13 +57,13 @@ function addHero() {
 	  var geometry = new THREE.DodecahedronGeometry(35, 1);
 	  var material = new THREE.MeshStandardMaterial({color: 0xe5f2f2, shading:THREE.FlatShading} )
 	  jumping = false;
-	  var heroSphere = new THREE.Mesh(geometry, material );
-	  heroSphere.receiveShadow = true;
-	  heroSphere.castShadow = true;
-	  scene.add(heroSphere);
-    heroSphere.position.set(0, -50, -300);
+	  hero = new THREE.Mesh(geometry, material );
+	  hero.receiveShadow = true;
+	  hero.castShadow = true;
+	  scene.add(hero);
+    hero.position.set(0, -50, -300);
 	  currentLane = middleLane;
-	  heroSphere.position.x = currentLane;
+	  hero.position.x = currentLane;
 }
 
 function addWorld(){
