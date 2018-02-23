@@ -8,6 +8,7 @@ var heroSpeed  = Math.PI/35;
 var heroAxisY  = -115;
 var accelerate = 0.005;
 var jumping;
+var gravity    = 0;
 var bounce     = 0.5;
 var pace       = 150;
 var paceCount  = 2;
@@ -151,9 +152,9 @@ function addHeroBouncing() {
 
   //jumping
   if(jumping) {
-    if(Math.abs(hero.position.y) > Math.abs(heroAxisY) || status === 'decreasing') {
-        hero.position.y -= bounce;
-        status = 'decreasing';
+    if(status === 'decreasing') {
+        gravity -= 0.06;
+        hero.position.y -= (bounce - gravity);
         if(hero.position.y < heroAxisY){
             hero.position.y = heroAxisY;
             bounce  = 0.5;
@@ -163,7 +164,11 @@ function addHeroBouncing() {
     }
     else{
        if (status !== 'decreasing') {
-            hero.position.y += bounce;
+            gravity += 0.06;
+            if (bounce - gravity < 0){
+               status = 'decreasing';
+            }
+            hero.position.y += (bounce - gravity);
        }
     }
     return;
