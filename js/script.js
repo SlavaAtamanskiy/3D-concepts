@@ -1,13 +1,18 @@
 // scene variables
-var renderer, scene, camera;
+var renderer, scene, camera, clock, status = '';
 // meshes
 var world, hero;
 // mesh functionality
 var worldSpeed = Math.PI/800;
-var heroSpeed  = Math.PI/50;
+var heroSpeed  = Math.PI/35;
+var heroAxisY  = -115;
+var accelerate = 0.005;
 var jumping;
-var leftLane = -1;
-var rightLane = 1;
+var bounce     = 0.5;
+var pace       = 150;
+var paceCount  = 2;
+var leftLane   = -(pace);
+var rightLane  = pace;
 var middleLane = 0;
 var currentLane;
 
@@ -31,25 +36,64 @@ function startGame () {
 
   //camera
   camera = new THREE.PerspectiveCamera(40, width/height, 0.1, 1000);
+  camera.position.set(0, 0, 375);
 
+  //lights
   var light_am = new THREE.AmbientLight(0xffffff, 0.5);
   var light_po = new THREE.PointLight(0xffffff, 0.5);
   scene.add(light_am);
   scene.add(light_po);
 
+  //clock
+  clock = new THREE.Clock();
+	clock.start();
+
+  //dev
+  addDevTools();
+
   addWorld();
   addHero();
+
+  document.onkeydown = handleKeyDown;
 
 }
 
 function loop () {
-  
+
+    //meshes rotation
     world.rotation.x += worldSpeed;
     hero.rotation.x  -= heroSpeed;
+
+    //game logic
+
+    //bouncing and jumping
+    addHeroBouncing();
+    //left and right smooth moves
+    hero.position.x = THREE.Math.lerp(hero.position.x, currentLane, 2*clock.getDelta());
+
+    //rendering and refreshing
     renderer.render(scene, camera);
     requestAnimationFrame(function (){
         loop ();
     });
+
+}
+
+function handleKeyDown(keyEvent){
+
+  if(jumping)return;
+
+  if (keyEvent.keyCode === 32){//space, jump
+         bounce  = 5;
+         jumping = true;
+         return;
+  }
+
+	if (keyEvent.keyCode === 37 && currentLane !== -(pace*paceCount)) {//left
+		  currentLane -= pace;
+	} else if (keyEvent.keyCode === 39 && currentLane !== pace*paceCount) {//right
+      currentLane += pace;
+	}
 
 }
 
@@ -61,56 +105,35 @@ function addHero() {
 	  hero.receiveShadow = true;
 	  hero.castShadow = true;
 	  scene.add(hero);
-    hero.position.set(0, -50, -300);
+    hero.position.set(0, heroAxisY, -100);
 	  currentLane = middleLane;
 	  hero.position.x = currentLane;
 }
 
 function addWorld(){
 
-	var sides=600;
-	var tiers=600;
+	var sides = 200;
+	var tiers = 200;
+  var radius= 2000;
 
-  var geometry = new THREE.SphereGeometry(2000, sides, tiers);
-  var material = new THREE.MeshStandardMaterial({color: 0x00ff00, shading:THREE.FlatShading});
-  var vertexIndex;
-	var vertexVector = new THREE.Vector3();
-	var nextVertexVector= new THREE.Vector3();
-	var firstVertexVector= new THREE.Vector3();
-	var offset= new THREE.Vector3();
-	var currentTier=1;
-	var lerpValue=0.5;
-	var heightValue;
-	var maxHeight=2.5;
-  var mountainCounter = 0;
+  var geometry = new THREE.SphereGeometry(radius, sides, tiers);
+  var material = new THREE.MeshStandardMaterial({color: 0x00ff00, shading:THREE.FlatShading, wireframe: false});
+  var maxHeight=80;
 
-	for(var j=1;j<tiers-2;j++){
-		     currentTier=j;
-		     for(var i=0; i<sides; i++){
-			             vertexIndex=(currentTier*sides)+1;
-			             vertexVector=geometry.vertices[i+vertexIndex].clone();
-			             if(j%2!==0){
-				               if(i==0){
-					                     firstVertexVector=vertexVector.clone();
-				               }
-				                       nextVertexVector=geometry.vertices[i+vertexIndex+1].clone();
-				               if(i==sides-1){
-					                     nextVertexVector=firstVertexVector;
-				               }
-				           lerpValue=(Math.random()*(1.75-1.25))+0.25;
-				           vertexVector.lerp(nextVertexVector,lerpValue);
-                   mountainCounter++;
-			             }
-			  heightValue =(mountainCounter === 200)? Math.random()*20 - Math.random()*20:(Math.random()*maxHeight)-(maxHeight/2);
-        //heightValue =(Math.random()*maxHeight)-(maxHeight/2);
-			  offset = vertexVector.clone().normalize().multiplyScalar(heightValue);
-			  geometry.vertices[i+vertexIndex]=(vertexVector.add(offset));
-        if (mountainCounter === 200){
-            mountainCounter = 0;
-        }
-
-		}
-	}
+  if (clock.running){
+      clock.stop();
+  }
+  clock.start();
+  var cur = 1;
+  var val = 0;
+  for(var i = 0; i < geometry.vertices.length; i++){
+      val += 20*clock.getDelta()*cur;
+      if (maxHeight < Math.abs(val)) {
+         cur = cur*(-1);
+      }
+      geometry.vertices[i].x += -10 + Math.random()*20*val;
+      geometry.vertices[i].y += -10 + Math.random()*20*val;
+  }
 
   world = new THREE.Mesh(geometry, material);
   world.rotation.z = 90;
@@ -119,6 +142,51 @@ function addWorld(){
   world.castShadow = true;
 
   scene.add(world);
+
+}
+
+//Bouncing and jumping logic
+//
+function addHeroBouncing() {
+
+  //jumping
+  if(jumping) {
+    if(Math.abs(hero.position.y) > Math.abs(heroAxisY) || status === 'decreasing') {
+        hero.position.y -= bounce;
+        status = 'decreasing';
+        if(hero.position.y < heroAxisY){
+            hero.position.y = heroAxisY;
+            bounce  = 0.5;
+            jumping = false;
+            status = '';
+        }
+    }
+    else{
+       if (status !== 'decreasing') {
+            hero.position.y += bounce;
+       }
+    }
+    return;
+  }
+
+  //bouncing
+  hero.position.y += bounce;
+  var margin = 45;
+  if(Math.abs(hero.position.y) < Math.abs(heroAxisY) - margin){
+      hero.position.y = heroAxisY;
+  }
+  if(Math.abs(hero.position.y) < Math.abs(heroAxisY) - Math.floor(Math.random()*margin)){
+      hero.position.y = heroAxisY;
+  }
+
+}
+
+function addDevTools() {
+
+  //An axis object to visualize the 3 axes in a simple way.
+  //The X axis is red. The Y axis is green. The Z axis is blue.
+  var axesHelper = new THREE.AxesHelper(500);
+  scene.add(axesHelper);
 
 }
 
