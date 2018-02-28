@@ -1,12 +1,11 @@
 // scene variables
-var renderer, scene, camera, clock, status = '';
+var renderer, scene, camera, clock, position, status = '';
 // meshes
 var world, hero;
 // mesh functionality
 var worldSpeed = Math.PI/800;
 var heroSpeed  = Math.PI/35;
 var heroAxisY  = -115;
-var accelerate = 0.005;
 var jumping;
 var gravity    = 0;
 var bounce     = 0.5;
@@ -16,6 +15,8 @@ var leftLane   = -(pace);
 var rightLane  = pace;
 var middleLane = 0;
 var currentLane;
+var symbolsInPath;
+var symbols;
 
 function startGame () {
 
@@ -49,11 +50,18 @@ function startGame () {
   clock = new THREE.Clock();
 	clock.start();
 
+  //scene decorations
+  position = new THREE.Spherical(); //helps to set an object`s position on a sphere
+  symbolsInPath = [];
+	symbols = [];
+
   //dev
   addDevTools();
 
   addWorld();
   addHero();
+
+  createSymbols();
 
   document.onkeydown = handleKeyDown;
 
@@ -95,6 +103,56 @@ function handleKeyDown(keyEvent){
 	} else if (keyEvent.keyCode === 39 && currentLane !== pace*paceCount) {//right
       currentLane += pace;
 	}
+
+}
+
+function createSymbols(){
+
+    var alphabet = 'A,B,C,D,E';
+    var leng = alphabet.length;
+    var arr = alphabet.split(',');
+    var createdSymbols = [];
+    var i = 0;
+
+    var loader = new THREE.FontLoader();
+    loader.load('lib/fonts.min.js', function (font) {
+          while (i < leng) {
+                var sym = arr[Math.floor(Math.random()*leng)];
+                var x = createdSymbols.find(function (o) {
+                                       return o === sym;
+                                    });
+                if (x === undefined) {
+               symbols.push(createSymbol(sym, font));
+               createdSymbols.push(sym);
+               i++;
+            }
+
+      }
+
+    });
+
+}
+
+function createSymbol(sym, font){
+
+  var material = new THREE.MeshPhongMaterial({color: 0xdddddd});
+  var textGeom = new THREE.TextGeometry(sym, {
+      font: font,
+      size: 50,
+      height: 10,
+      curveSegments: 12,
+      bevelThickness: 1,
+      bevelSize: 1,
+      bevelEnabled: true//normal or italics(both don't always work with all fonts)
+
+  });
+  var textMesh = new THREE.Mesh(textGeom, material);
+  scene.add(textMesh);
+
+  // Do some optional calculations. This is only if you need to get the
+  // width of the generated text
+  textGeom.computeBoundingBox();
+  textGeom.textWidth = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
 
 }
 
