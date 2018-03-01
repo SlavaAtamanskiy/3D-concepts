@@ -1,4 +1,5 @@
 // scene variables
+var font_source = 'https://raw.githubusercontent.com/SlavaAtamanskiy/3D-concepts/development/js/helvetiker_bold.typeface.json';
 var renderer, scene, camera, clock, position, status = '';
 // meshes
 var world, hero;
@@ -107,24 +108,25 @@ function handleKeyDown(keyEvent){
 }
 
 function createSymbols(){
-
+    //debug
     var alphabet = 'A,B,C,D,E';
-    var leng = alphabet.length;
+    //debug
     var arr = alphabet.split(',');
-    var createdSymbols = [];
+    var leng = arr.length;
+    var createdSymbols = []; //filter
     var i = 0;
 
     var loader = new THREE.FontLoader();
-    loader.load('helvetiker_bold.typeface.json', function (font) {
+    loader.load(font_source, function (font) {
           while (i < leng) {
                 var sym = arr[Math.floor(Math.random()*leng)];
                 var x = createdSymbols.find(function (o) {
                                        return o === sym;
                                     });
                 if (x === undefined) {
-               symbols.push(createSymbol(sym, font));
-               createdSymbols.push(sym);
-               i++;
+                   symbols.push(createSymbol(sym, font));
+                   createdSymbols.push(sym);
+                   i++;
             }
 
       }
