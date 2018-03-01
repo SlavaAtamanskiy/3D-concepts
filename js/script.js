@@ -115,7 +115,7 @@ function createSymbols(){
     var i = 0;
 
     var loader = new THREE.FontLoader();
-    loader.load('lib/fonts.min.js', function (font) {
+    loader.load('helvetiker_bold.typeface.json', function (font) {
           while (i < leng) {
                 var sym = arr[Math.floor(Math.random()*leng)];
                 var x = createdSymbols.find(function (o) {
