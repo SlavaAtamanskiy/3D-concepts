@@ -5,10 +5,11 @@ var renderer, scene, camera, clock, position, status = '';
 // meshes
 var world, hero;
 // mesh functionality
-var worldSpeed = Math.PI/800;
+var worldSpeed = Math.PI/600;
 var worldRadius= 2000;
-var heroSpeed  = Math.PI/35;
-var heroAxisY  = -115;
+var heroSpeed  = Math.PI/25;
+//var heroAxisY  = -115;
+var heroAxisY  = -230;
 //hero moves
 var jumping;
 var gravity    = 0;
@@ -47,12 +48,13 @@ function startGame () {
   scene  = new THREE.Scene();
 
   //camera
-  camera = new THREE.PerspectiveCamera(40, width/height, 0.1, 1000);
-  camera.position.set(0, 0, 375);
+  camera = new THREE.PerspectiveCamera(40, width/height, 0.1, 2000);
+  camera.position.set(0, -100, 675);
 
   //lights
   var light_am = new THREE.AmbientLight(0xffffff, 0.5);
   var light_po = new THREE.PointLight(0xffffff, 0.5);
+  light_po.position.set(0, -100, 675);
   scene.add(light_am);
   scene.add(light_po);
 
@@ -64,12 +66,12 @@ function startGame () {
   position = new THREE.Spherical(); //helps to set an object`s position on a sphere
 
   //dev
-  addDevTools();
+  addDevTools ();
 
-  addWorld();
-  addHero();
-  addExplosion();
-  createSymbols();
+  addWorld ();
+  addHero ();
+  addExplosion ();
+  createEnvironment ();
 
   document.onkeydown = handleKeyDown;
 
@@ -94,7 +96,7 @@ function loop () {
 
 }
 
-function handleKeyDown(keyEvent){
+function handleKeyDown (keyEvent) {
 
   if(jumping)return;
 
@@ -112,8 +114,9 @@ function handleKeyDown(keyEvent){
 
 }
 
-function createSymbols(){
+function createEnvironment () {
 
+    //symbols
     var arr = alphabet.split(',');
     var leng = arr.length;
     var createdSymbols = []; //filter
@@ -121,24 +124,31 @@ function createSymbols(){
 
     var loader = new THREE.FontLoader();
     loader.load(font_source, function (font) {
-          while (i < leng) {
+      //unique values
+      while (i < leng) {
                 var sym = arr[Math.floor(Math.random()*leng)];
                 var x = createdSymbols.find(function (o) {
                                        return o === sym;
                                     });
                 if (x === undefined) {
-                   symbols.push(createSymbol(sym, font));
+                   symbols.push(createSymbol(sym, font, i));
                    createdSymbols.push(sym);
                    i++;
             }
 
+      }
+      i=0;
+      while (i < 35) {
+                var sym = arr[Math.floor(Math.random()*leng)];
+                symbols.push(createSymbol(sym, font, i));
+            i++;
       }
 
     });
 
 }
 
-function createSymbol(sym, font){
+function createSymbol (sym, font, counter) {
 
   var material = new THREE.MeshPhongMaterial({color: 0x85ebf7});
   var textGeom = new THREE.TextGeometry(sym, {
@@ -158,7 +168,7 @@ function createSymbol(sym, font){
   textGeom.computeBoundingBox();
   textGeom.textWidth = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
 
-  position.set(worldRadius, 1.7, world.rotation.x+=20);
+  position.set(worldRadius, (counter%2) > 0 ? 1.7 : 1.2, world.rotation.x+=45);
   textMesh.position.setFromSpherical(position);
   /*
   var dir = (Math.floor(Math.random()*2) === 1) ? 1 : -1;
@@ -176,7 +186,7 @@ function createSymbol(sym, font){
 
 }
 
-function addHero() {
+function addHero () {
 	  var geometry = new THREE.DodecahedronGeometry(35, 1);
 	  var material = new THREE.MeshStandardMaterial({color: 0xe5f2f2, shading:THREE.FlatShading} )
 	  jumping = false;
@@ -184,12 +194,12 @@ function addHero() {
 	  hero.receiveShadow = true;
 	  hero.castShadow = true;
 	  scene.add(hero);
-    hero.position.set(0, heroAxisY, -100);
+    hero.position.set(0, heroAxisY, 140);
 	  currentLane = middleLane;
 	  hero.position.x = currentLane;
 }
 
-function addWorld(){
+function addWorld () {
 
 	var sides = 200;
 	var tiers = 200;
@@ -225,7 +235,7 @@ function addWorld(){
 
 //Moves. Bouncing and jumping logic
 //
-function addHeroMoves() {
+function addHeroMoves () {
 
   //left and right smooth moves
   hero.position.x = THREE.Math.lerp(hero.position.x, currentLane, 2*clock.getDelta());
@@ -266,7 +276,7 @@ function addHeroMoves() {
 
 }
 
-function addExplosion(){
+function addExplosion () {
 
   particleGeometry = new THREE.Geometry();
 	for (var i = 0; i < particleCount; i ++) {
@@ -283,7 +293,7 @@ function addExplosion(){
 
 }
 
-function addDevTools() {
+function addDevTools () {
 
   //An axis object to visualize the 3 axes in a simple way.
   //The X axis is red. The Y axis is green. The Z axis is blue.
