@@ -1,12 +1,15 @@
 // scene variables
 var font_source = 'https://raw.githubusercontent.com/SlavaAtamanskiy/3D-concepts/development/js/helvetiker_bold.typeface.json';
+var alphabet = 'A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z';
 var renderer, scene, camera, clock, position, status = '';
 // meshes
 var world, hero;
 // mesh functionality
 var worldSpeed = Math.PI/800;
+var worldRadius= 2000;
 var heroSpeed  = Math.PI/35;
 var heroAxisY  = -115;
+//hero moves
 var jumping;
 var gravity    = 0;
 var bounce     = 0.5;
@@ -16,8 +19,14 @@ var leftLane   = -(pace);
 var rightLane  = pace;
 var middleLane = 0;
 var currentLane;
-var symbolsInPath;
-var symbols;
+//symbols logic
+var symbolsInPath = [];
+var symbols = [];
+//explosion
+var particleGeometry;
+var particleCount = 20;
+var explosionPower = 1.06;
+var particles;
 
 function startGame () {
 
@@ -53,15 +62,13 @@ function startGame () {
 
   //scene decorations
   position = new THREE.Spherical(); //helps to set an object`s position on a sphere
-  symbolsInPath = [];
-	symbols = [];
 
   //dev
   addDevTools();
 
   addWorld();
   addHero();
-
+  addExplosion();
   createSymbols();
 
   document.onkeydown = handleKeyDown;
@@ -76,10 +83,8 @@ function loop () {
 
     //game logic
 
-    //bouncing and jumping
-    addHeroBouncing();
-    //left and right smooth moves
-    hero.position.x = THREE.Math.lerp(hero.position.x, currentLane, 2*clock.getDelta());
+    //moves, bouncing and jumping
+    addHeroMoves();
 
     //rendering and refreshing
     renderer.render(scene, camera);
@@ -108,9 +113,7 @@ function handleKeyDown(keyEvent){
 }
 
 function createSymbols(){
-    //debug
-    var alphabet = 'A,B,C,D,E';
-    //debug
+
     var arr = alphabet.split(',');
     var leng = arr.length;
     var createdSymbols = []; //filter
@@ -137,11 +140,11 @@ function createSymbols(){
 
 function createSymbol(sym, font){
 
-  var material = new THREE.MeshPhongMaterial({color: 0xdddddd});
+  var material = new THREE.MeshPhongMaterial({color: 0x85ebf7});
   var textGeom = new THREE.TextGeometry(sym, {
       font: font,
-      size: 50,
-      height: 10,
+      size: 100,
+      height: 50,
       curveSegments: 12,
       bevelThickness: 1,
       bevelSize: 1,
@@ -149,12 +152,27 @@ function createSymbol(sym, font){
 
   });
   var textMesh = new THREE.Mesh(textGeom, material);
-  scene.add(textMesh);
 
   // Do some optional calculations. This is only if you need to get the
   // width of the generated text
   textGeom.computeBoundingBox();
   textGeom.textWidth = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
+
+  position.set(worldRadius, 1.7, world.rotation.x+=20);
+  textMesh.position.setFromSpherical(position);
+  /*
+  var dir = (Math.floor(Math.random()*2) === 1) ? 1 : -1;
+  var axis_x = (Math.floor(Math.random()*(pace*2)))*dir;
+  textMesh.position.set(axis_x, -50, -50);
+  textMesh.rotation.y = Math.floor(Math.random()*35);
+  */
+  var worldVector = world.position.clone().normalize();
+  var textVector  = textMesh.position.clone().normalize();
+  textMesh.quaternion.setFromUnitVectors(textVector, worldVector);
+  //textMesh.rotation.x+=(Math.random()*(2*Math.PI/10))+-Math.PI/10;
+  world.add(textMesh);
+
+  return textMesh;
 
 }
 
@@ -162,7 +180,7 @@ function addHero() {
 	  var geometry = new THREE.DodecahedronGeometry(35, 1);
 	  var material = new THREE.MeshStandardMaterial({color: 0xe5f2f2, shading:THREE.FlatShading} )
 	  jumping = false;
-	  hero = new THREE.Mesh(geometry, material );
+	  hero = new THREE.Mesh(geometry, material);
 	  hero.receiveShadow = true;
 	  hero.castShadow = true;
 	  scene.add(hero);
@@ -175,9 +193,8 @@ function addWorld(){
 
 	var sides = 200;
 	var tiers = 200;
-  var radius= 2000;
 
-  var geometry = new THREE.SphereGeometry(radius, sides, tiers);
+  var geometry = new THREE.SphereGeometry(worldRadius, sides, tiers);
   var material = new THREE.MeshStandardMaterial({color: 0x00ff00, shading:THREE.FlatShading, wireframe: false});
   var maxHeight=80;
 
@@ -206,9 +223,12 @@ function addWorld(){
 
 }
 
-//Bouncing and jumping logic
+//Moves. Bouncing and jumping logic
 //
-function addHeroBouncing() {
+function addHeroMoves() {
+
+  //left and right smooth moves
+  hero.position.x = THREE.Math.lerp(hero.position.x, currentLane, 2*clock.getDelta());
 
   //jumping
   if(jumping) {
@@ -243,6 +263,23 @@ function addHeroBouncing() {
   if(Math.abs(hero.position.y) < Math.abs(heroAxisY) - Math.floor(Math.random()*margin)){
       hero.position.y = heroAxisY;
   }
+
+}
+
+function addExplosion(){
+
+  particleGeometry = new THREE.Geometry();
+	for (var i = 0; i < particleCount; i ++) {
+		   var vertex = new THREE.Vector3();
+		   particleGeometry.vertices.push(vertex);
+	}
+	var pMaterial = new THREE.ParticleBasicMaterial({
+	     color: 0xfffafa,
+	     size: 0.2
+	});
+	particles = new THREE.Points(particleGeometry, pMaterial);
+	scene.add(particles);
+	particles.visible = true;
 
 }
 
