@@ -8,7 +8,6 @@ var world, hero;
 var worldSpeed = Math.PI/600;
 var worldRadius= 2000;
 var heroSpeed  = Math.PI/25;
-//var heroAxisY  = -115;
 var heroAxisY  = -230;
 //hero moves
 var jumping;
@@ -70,7 +69,7 @@ function startGame () {
 
   addWorld ();
   addHero ();
-  addExplosion ();
+  //addExplosion ();
   createEnvironment ();
 
   document.onkeydown = handleKeyDown;
